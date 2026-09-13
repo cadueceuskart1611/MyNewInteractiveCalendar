@@ -70,7 +70,11 @@
             const url = `https://github.com{GITHUB_USER}/${REPO_NAME}/contents/${FILE_PATH}`;
             try {
                 let response = await fetch(url, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
-                if (response.ok) {
+                // NEW SECURE CONFIGURATION
+let GITHUB_TOKEN = localStorage.getItem('family_calendar_secret_token');
+const GITHUB_USER = 'cadueceuskart1611'; // Put your real username here
+const REPO_NAME = 'MyNewInteractiveCalendar';   // Put your real repository name here
+const FILE_PATH = 'schedule-data.json';
                     const GITHUB_TOKEN = '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'
                     const GITHUB_USER = 'cadueceuskart1611'
                     const REPO_NAME = 'MyNewInteractiveCalendar'
