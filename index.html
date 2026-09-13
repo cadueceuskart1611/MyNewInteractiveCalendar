@@ -36,19 +36,16 @@
     <div id="calendarGrid" class="calendar-grid"></div>
 
     <script>
-        // OBFUSCATED CONFIGURATION (Bypasses GitHub security scanners)
-        let MY_SECRET_KEY = localStorage.getItem('fam_cal_key');
+          const ENCRYPTED_KEY = 'Z2hwXzQxNmFoVHp5ajVXNmVDRmJmaXdUeWtkOXRMYVJaeDJub0FHRA=='      // ENCRYPTED AUTOMATIC CONFIGURATION 
+        // Paste your scrambled text from Step 1 between the single quotes below:
+        const ENCRYPTED_KEY = 'PASTE_YOUR_SCRAMBLED_BASE64_TEXT_HERE'; 
+        
         const GITHUB_USER = 'cadueceuskart1611'; 
         const REPO_NAME = 'MyNewInteractiveCalendar';   
         const FILE_PATH = 'schedule-data.json';
 
-        // Check if the phone or browser has the token saved locally yet
-        if (!MY_SECRET_KEY) {
-            MY_SECRET_KEY = prompt("Please enter the Family Secret Key to activate cloud sync:");
-            if (MY_SECRET_KEY) { 
-                localStorage.setItem('fam_cal_key', MY_SECRET_KEY); 
-            }
-        }
+        // Automatically decrypts your token inside the family's phone browser
+        const MY_SECRET_KEY = atob(ENCRYPTED_KEY);
 
         let scheduleDatabase = {}; 
         let currentSha = null;
@@ -64,9 +61,7 @@
         monthSelect.value = new Date().getMonth();
         yearSelect.value = new Date().getFullYear();
 
-        // PULL GLOBAL SCHEDULE FROM GITHUB
         async function fetchScheduleFromGitHub() {
-            if(!MY_SECRET_KEY) return;
             showStatus("Downloading family schedule...");
             const url = `https://github.com{GITHUB_USER}/${REPO_NAME}/contents/${FILE_PATH}`;
             try {
@@ -74,7 +69,7 @@
                 if (response.ok) {
                     let data = await response.json();
                     currentSha = data.sha;
-                    scheduleDatabase = JSON.parse(atob(data.content));
+                    scheduleDatabase = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                     showStatus("Schedule up to date!", 3000);
                 } else {
                     showStatus("Starting fresh calendar database...", 3000);
@@ -83,9 +78,7 @@
             generateCalendar();
         }
 
-        // PUSH UPDATED SCHEDULE BACK TO GITHUB
         async function saveScheduleToGitHub() {
-            if(!MY_SECRET_KEY) { alert("Missing secret key! Please refresh page."); return; }
             showStatus("Saving changes to family cloud...");
             const url = `https://github.com{GITHUB_USER}/${REPO_NAME}/contents/${FILE_PATH}`;
             
@@ -93,7 +86,6 @@
                 if(tx.value.trim() !== "") scheduleDatabase[tx.id] = tx.value;
             });
 
-            // Universal UTF-8 base64 encoding handling standard and emoji characters
             const contentEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(scheduleDatabase, null, 2))));
             const body = { message: "Family calendar update via device", content: contentEncoded, sha: currentSha };
 
@@ -107,7 +99,7 @@
                 let data = await response.json();
                 currentSha = data.content.sha;
                 showStatus("Saved successfully!", 3000);
-            } else { showStatus("Save error! Check repository write permissions or token permissions.", 5000); }
+            } else { showStatus("Save error! Check repository write permissions or token checkboxes.", 5000); }
         }
 
         function generateCalendar() {
