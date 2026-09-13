@@ -36,16 +36,19 @@
     <div id="calendarGrid" class="calendar-grid"></div>
 
     <script>
-          const ENCRYPTED_KEY = 'Z2hwXzQxNmFoVHp5ajVXNmVDRmJmaXdUeWtkOXRMYVJaeDJub0FHRA=='      // ENCRYPTED AUTOMATIC CONFIGURATION 
-        // Paste your scrambled text from Step 1 between the single quotes below:
-        const ENCRYPTED_KEY = 'PASTE_YOUR_SCRAMBLED_BASE64_TEXT_HERE'; 
-        
+        // CLEAN, WORKING PLUG-AND-PLAY CONNECTION
+        let GITHUB_TOKEN = localStorage.getItem('family_calendar_secret_token');
         const GITHUB_USER = 'cadueceuskart1611'; 
         const REPO_NAME = 'MyNewInteractiveCalendar';   
         const FILE_PATH = 'schedule-data.json';
 
-        // Automatically decrypts your token inside the family's phone browser
-        const MY_SECRET_KEY = atob(ENCRYPTED_KEY);
+        // Automatically opens a prompt popup on your iPad if the key isn't saved yet
+        if (!GITHUB_TOKEN) {
+            GITHUB_TOKEN = prompt("Please enter the Family Secret Token to activate sync:");
+            if (GITHUB_TOKEN) {
+                localStorage.setItem('family_calendar_secret_token', GITHUB_TOKEN);
+            }
+        }
 
         let scheduleDatabase = {}; 
         let currentSha = null;
@@ -62,10 +65,11 @@
         yearSelect.value = new Date().getFullYear();
 
         async function fetchScheduleFromGitHub() {
+            if(!GITHUB_TOKEN) return;
             showStatus("Downloading family schedule...");
             const url = `https://github.com{GITHUB_USER}/${REPO_NAME}/contents/${FILE_PATH}`;
             try {
-                let response = await fetch(url, { headers: { 'Authorization': 'token ' + MY_SECRET_KEY } });
+                let response = await fetch(url, { headers: { 'Authorization': 'token ' + GITHUB_TOKEN } });
                 if (response.ok) {
                     let data = await response.json();
                     currentSha = data.sha;
@@ -79,6 +83,7 @@
         }
 
         async function saveScheduleToGitHub() {
+            if(!GITHUB_TOKEN) { alert("Missing secret token! Please reload page."); return; }
             showStatus("Saving changes to family cloud...");
             const url = `https://github.com{GITHUB_USER}/${REPO_NAME}/contents/${FILE_PATH}`;
             
@@ -87,11 +92,11 @@
             });
 
             const contentEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(scheduleDatabase, null, 2))));
-            const body = { message: "Family calendar update via device", content: contentEncoded, sha: currentSha };
+            const body = { message: "Family calendar update", content: contentEncoded, sha: currentSha };
 
             let response = await fetch(url, {
                 method: 'PUT',
-                headers: { 'Authorization': 'token ' + MY_SECRET_KEY, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
@@ -99,7 +104,7 @@
                 let data = await response.json();
                 currentSha = data.content.sha;
                 showStatus("Saved successfully!", 3000);
-            } else { showStatus("Save error! Check repository write permissions or token checkboxes.", 5000); }
+            } else { showStatus("Save error! Make sure your GitHub token has both 'repo' and 'workflow' checkboxes ticked.", 5000); }
         }
 
         function generateCalendar() {
@@ -141,3 +146,6 @@
     </script>
 </body>
 </html>
+
+  
+
